@@ -564,6 +564,8 @@ class SmartPlotter:
 
         max_len_by_row = max([round(50 / self._explainer.features_desc[feature_values.columns.values[0]]), 8])
 
+        y_target = getattr(self._explainer, "y_target", None)
+
         # selecting the best plot : Scatter, Violin?
         if col_value_count > violin_maxf:
             fig = plot_scatter(
@@ -609,7 +611,7 @@ class SmartPlotter:
                 file_name,
                 auto_open,
                 zoom,
-                self._explainer.y_target,
+                y_target,
             )
 
         return fig
