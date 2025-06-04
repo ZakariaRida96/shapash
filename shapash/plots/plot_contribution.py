@@ -717,13 +717,12 @@ def _add_violin_and_scatter(
     if len(y) > 0:
         x = [i] * len(y)
         hovertext = hovertext_df.loc[feature_cond].values.flatten()
-        if y_target is not None:
-            classes = np.unique(y_target)
-            if len(classes) <= len(symbol_map):
-                target_val = y_target.loc[feature_cond].values.flatten()
-                symbols = np.array([symbol_map[val] for val in target_val])
-            else:
-                symbols = "circle"  # Default symbol if y_target is None and also nb classe sup then 4:
+        classes = np.unique(y_target)
+        if y_target is not None and len(classes) <= len(symbol_map):
+            target_val = y_target.loc[feature_cond].values.flatten()
+            symbols = np.array([symbol_map[val] for val in target_val])
+        else:
+            symbols = "circle"  # Default symbol if y_target is None and also nb classe sup then 4:
 
         _add_violin_trace(fig, c, x, y, side, line_color, hovertext, secondary_y)
 
