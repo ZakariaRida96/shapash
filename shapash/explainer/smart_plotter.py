@@ -564,6 +564,10 @@ class SmartPlotter:
 
         max_len_by_row = max([round(50 / self._explainer.features_desc[feature_values.columns.values[0]]), 8])
 
+        # prevent AttributeError because its not an attribute on SmartExplainer
+        # rather its a parameter on the method compile()
+        # to display the shapes marker depending on the true target class, you should set it on the compile methode
+        # for example: compile(...,y_target=ytest)
         y_target = getattr(self._explainer, "y_target", None)
 
         # selecting the best plot : Scatter, Violin?

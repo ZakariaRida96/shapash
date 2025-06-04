@@ -674,6 +674,7 @@ def _prepare_hover_text(feature_values, pred, feature_name, y_target):
     - The hover template to be used in Plotly.
     """
     # Building the base text for hover
+    # Add y_target on hover_text
     hv_text = [
         f"Id: {id_val}{f'<br />Predict: {pred_val}' if pred is not None else ''}{f'<br />Y_true: {target_val}' if y_target is not None else ''}"
         for id_val, pred_val, target_val in zip(
@@ -713,16 +714,17 @@ def _add_violin_and_scatter(
 ):
     """Adds a Violin trace and a Scatter trace based on specified conditions."""
     y = contributions.loc[feature_cond].iloc[:, 0].values
+    # set 4 makers shape
     symbol_map = {0: "x", 1: "circle", 2: "triangle-up", 3: "diamond"}
     if len(y) > 0:
         x = [i] * len(y)
         hovertext = hovertext_df.loc[feature_cond].values.flatten()
-        classes = np.unique(y_target)
-        if y_target is not None and len(classes) <= len(symbol_map):
+        # check if y_true is set on compile() and nb of it classes are below 4
+        if y_target is not None and len(np.unique(y_target)) <= len(symbol_map):
             target_val = y_target.loc[feature_cond].values.flatten()
             symbols = np.array([symbol_map[val] for val in target_val])
         else:
-            symbols = "circle"  # Default symbol if y_target is None and also nb classe sup then 4:
+            symbols = "circle"  # default
 
         _add_violin_trace(fig, c, x, y, side, line_color, hovertext, secondary_y)
 
@@ -736,16 +738,16 @@ def _add_violin_and_scatter(
         )
         marker = None
         if colorpoints is not None:
-            if isinstance(symbols, np.ndarray) and symbols.ndim > 1:
-                symbols = symbols.flatten()
-            marker = {
-                "color": colorpoints_selected,
-                "colorscale": col_scale,
-                "opacity": 0.7,
-                "cmin": cmin,
-                "cmax": cmax,
-                "symbol": symbols,
-            }
+            # check that symbols is an 1D array and the symbol on the maker
+            if isinstance(symbols, np.ndarray) and symbols.ndim == 1:
+                marker = {
+                    "color": colorpoints_selected,
+                    "colorscale": col_scale,
+                    "opacity": 0.7,
+                    "cmin": cmin,
+                    "cmax": cmax,
+                    "symbol": symbols,
+                }
 
         _add_scatter_trace(fig, x, y, c, marker, hovertext, hovertemplate, customdata, secondary_y)
 
