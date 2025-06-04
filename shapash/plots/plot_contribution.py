@@ -216,6 +216,7 @@ def plot_violin(
     file_name=None,
     auto_open=False,
     zoom=False,
+    y_target=None,
 ):
     """
     Violin plot of one feature contribution across the prediction set.
@@ -276,8 +277,10 @@ def plot_violin(
         pred = pred.loc[feature_values.index]
     if proba_values is not None:
         proba_values = proba_values.loc[feature_values.index]
+    if y_target is not None:
+        y_target = y_target.loc[feature_values.index]
 
-    hv_text_df, hovertemplate = _prepare_hover_text(feature_values, pred, feature_name)
+    hv_text_df, hovertemplate = _prepare_hover_text(feature_values, pred, feature_name, y_target)
 
     feature_values_counts = feature_values.value_counts()
     xs = feature_values_counts.index.get_level_values(0).sort_values()
@@ -329,6 +332,7 @@ def plot_violin(
                 line_color=style_dict["violin_area_classif"][0],
                 secondary_y=True,
                 side="negative",
+                y_target=y_target,
             )
 
             # Positive case
@@ -349,6 +353,7 @@ def plot_violin(
                 line_color=style_dict["violin_area_classif"][1],
                 secondary_y=True,
                 side="positive",
+                y_target=y_target,
             )
         else:
             # General case
@@ -369,6 +374,7 @@ def plot_violin(
                 line_color=style_dict["violin_default"],
                 secondary_y=True,
                 side="both",
+                y_target=y_target,
             )
 
     if colorpoints is not None:
@@ -654,7 +660,7 @@ def _create_jittered_points(numerical_features, percentages, mean=0, std=0.6, cl
     return jittered_points
 
 
-def _prepare_hover_text(feature_values, pred, feature_name):
+def _prepare_hover_text(feature_values, pred, feature_name, y_target):
     """
     Prepares the hover text for a Plotly plot based on feature values and predictions.
 
@@ -669,9 +675,11 @@ def _prepare_hover_text(feature_values, pred, feature_name):
     """
     # Building the base text for hover
     hv_text = [
-        f"Id: {id_val}{f'<br />Predict: {pred_val}' if pred is not None else ''}"
-        for id_val, pred_val in zip(
-            feature_values.index, pred.values.flatten() if pred is not None else [""] * len(feature_values)
+        f"Id: {id_val}{f'<br />Predict: {pred_val}' if pred is not None else ''}{f'<br />Y_true: {target_val}' if y_target is not None else ''}"
+        for id_val, pred_val, target_val in zip(
+            feature_values.index,
+            pred.values.flatten() if pred is not None else [""] * len(feature_values),
+            y_target.values.flatten() if y_target is not None else [""] * len(feature_values),
         )
     ]
 
@@ -701,12 +709,21 @@ def _add_violin_and_scatter(
     line_color,
     secondary_y=True,
     side="both",
+    y_target=None,
 ):
     """Adds a Violin trace and a Scatter trace based on specified conditions."""
     y = contributions.loc[feature_cond].iloc[:, 0].values
+    symbol_map = {0: "x", 1: "circle", 2: "triangle-up", 3: "diamond"}
     if len(y) > 0:
         x = [i] * len(y)
         hovertext = hovertext_df.loc[feature_cond].values.flatten()
+        if y_target is not None:
+            classes = np.unique(y_target)
+            if len(classes) <= len(symbol_map):
+                target_val = y_target.loc[feature_cond].values.flatten()
+                symbols = np.array([symbol_map[val] for val in target_val])
+            else:
+                symbols = "circle"  # Default symbol if y_target is None and also nb classe sup then 4:
 
         _add_violin_trace(fig, c, x, y, side, line_color, hovertext, secondary_y)
 
@@ -720,12 +737,15 @@ def _add_violin_and_scatter(
         )
         marker = None
         if colorpoints is not None:
+            if isinstance(symbols, np.ndarray) and symbols.ndim > 1:
+                symbols = symbols.flatten()
             marker = {
                 "color": colorpoints_selected,
                 "colorscale": col_scale,
                 "opacity": 0.7,
                 "cmin": cmin,
                 "cmax": cmax,
+                "symbol": symbols,
             }
 
         _add_scatter_trace(fig, x, y, c, marker, hovertext, hovertemplate, customdata, secondary_y)

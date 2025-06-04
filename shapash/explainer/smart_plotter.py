@@ -609,6 +609,7 @@ class SmartPlotter:
                 file_name,
                 auto_open,
                 zoom,
+                self._explainer.y_target,
             )
 
         return fig
