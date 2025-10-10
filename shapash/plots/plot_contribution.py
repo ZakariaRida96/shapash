@@ -9,6 +9,21 @@ from shapash.utils.utils import add_line_break, adjust_title_height, truncate_st
 from shapash.webapp.utils.utils import round_to_k
 
 
+def build_marker_map(y_true_series: pd.Series):
+    """
+    Map unique target classes to Plotly marker shapes.
+        Parameters
+    ----------
+    y_true_series : 1D pandas Series of true labels
+         The values of y_target
+    """
+    symbols = ["circle", "square", "diamond", "triangle-up", "triangle-down", "x", "cross", "star"]
+    uniq = pd.unique(y_true_series.dropna())
+    if len(uniq) > 1:
+        uniq = sorted(uniq, key=str)
+    return {marker: symbols[i % len(symbols)] for i, marker in enumerate(uniq)}
+
+
 def plot_scatter(
     feature_values,
     contributions,
@@ -16,6 +31,7 @@ def plot_scatter(
     case,
     style_dict,
     pred=None,
+    y_true=None,
     proba_values=None,
     col_modality=None,
     col_scale=None,
@@ -43,6 +59,8 @@ def plot_scatter(
         Name of the feature, used in title
     pred: 1 column pd.DataFrame (optional)
         predicted values used to color plot - One Vs All in multiclass case
+    y_true: 1 column pd.DataFrame (optional)
+        true target values used to shape markers
     case: str
         Type of the model, either 'classification' or 'regression'
     style_dict: dict
@@ -80,6 +98,8 @@ def plot_scatter(
     contributions = contributions.loc[feature_values.index]
     if pred is not None:
         pred = pred.loc[feature_values.index]
+    if y_true is not None:
+        y_true = y_true.loc[feature_values.index]
     if proba_values is not None:
         proba_values = proba_values.loc[feature_values.index]
 
@@ -88,7 +108,13 @@ def plot_scatter(
     feature_values_str = feature_values.iloc[:, 0].apply(add_line_break, args=args)
     feature_values = pd.DataFrame({column_name: feature_values_str})
 
-    if pred is not None:
+    y_true_values = y_true.values.flatten() if y_true is not None else None
+    if pred is not None and y_true_values is not None:
+        hv_text = [
+            f"Id: {idx}<br />True: {true_val}<br />Predict: {pred_val}"
+            for idx, true_val, pred_val in zip(feature_values.index, y_true_values, pred.values.flatten())
+        ]
+    elif pred is not None:
         hv_text = [f"Id: {x}<br />Predict: {y}" for x, y in zip(feature_values.index, pred.values.flatten())]
     else:
         hv_text = [f"Id: {x}" for x in feature_values.index]
@@ -123,6 +149,11 @@ def plot_scatter(
         text_groups_features = None
 
     feature_values_array = feature_values.values.flatten()
+    marker_symbols = None
+    if y_true is not None:
+        y_true_series = pd.Series(y_true.values.flatten(), index=feature_values.index)
+        symbol_map = build_marker_map(y_true_series)
+        marker_symbols = y_true_series.map(symbol_map).fillna("circle-open").tolist()
 
     if len(feature_values_array) > 2:
         contributions_min = contributions.values.flatten().min()
@@ -160,6 +191,7 @@ def plot_scatter(
         # Add density plot
         fig.add_trace(density_plot)
 
+    marker_dict = {"symbol": marker_symbols} if marker_symbols is not None else None
     fig.add_scatter(
         x=feature_values_array,
         y=contributions.values.flatten(),
@@ -168,6 +200,7 @@ def plot_scatter(
         hovertemplate=hovertemplate,
         text=text_groups_features,
         showlegend=False,
+        marker=marker_dict,
     )
     # To change ticktext when the x label size is upper than 10 and zoom is False
     if (isinstance(feature_values_array[0], str)) & (not zoom):
@@ -211,6 +244,7 @@ def plot_violin(
     case,
     style_dict,
     pred=None,
+    y_true=None,
     proba_values=None,
     col_modality=None,
     col_scale=None,
@@ -241,6 +275,8 @@ def plot_violin(
         the different styles used in the different outputs of Shapash
     pred: 1 column pd.DataFrame (optional)
         predicted values used to color plot - One Vs All in multiclass case
+    y_true: 1 column pd.DataFrame (optional)
+        true target values used to shape markers
     proba_values: 1 column pd.DataFrame (optional)
         predicted proba used to color points - One Vs All in multiclass case
     col_modality: Int, Float or String (optional)
@@ -284,8 +320,15 @@ def plot_violin(
         pred = pred.loc[feature_values.index]
     if proba_values is not None:
         proba_values = proba_values.loc[feature_values.index]
+    if y_true is not None:
+        y_true = y_true.loc[feature_values.index]
+        y_true_series = pd.Series(y_true.values.flatten(), index=feature_values.index)
+        symbol_map = build_marker_map(y_true_series)
+    else:
+        y_true_series = None
+        symbol_map = None
 
-    hv_text_df, hovertemplate = _prepare_hover_text(feature_values, pred, feature_name)
+    hv_text_df, hovertemplate = _prepare_hover_text(feature_values, pred, feature_name, y_true)
 
     feature_values_counts = feature_values.value_counts()
     xs = feature_values_counts.index.get_level_values(0).sort_values()
@@ -337,6 +380,8 @@ def plot_violin(
                 line_color=style_dict["violin_area_classif"][0],
                 secondary_y=True,
                 side="negative",
+                y_true_series=y_true_series,
+                symbol_map=symbol_map,
             )
 
             # Positive case
@@ -357,6 +402,8 @@ def plot_violin(
                 line_color=style_dict["violin_area_classif"][1],
                 secondary_y=True,
                 side="positive",
+                y_true_series=y_true_series,
+                symbol_map=symbol_map,
             )
         else:
             # General case
@@ -377,6 +424,8 @@ def plot_violin(
                 line_color=style_dict["violin_default"],
                 secondary_y=True,
                 side="both",
+                y_true_series=y_true_series,
+                symbol_map=symbol_map,
             )
 
     if colorpoints is not None:
@@ -662,13 +711,14 @@ def _create_jittered_points(numerical_features, percentages, mean=0, std=0.6, cl
     return jittered_points
 
 
-def _prepare_hover_text(feature_values, pred, feature_name):
+def _prepare_hover_text(feature_values, pred, feature_name, y_true=None):
     """
     Prepares the hover text for a Plotly plot based on feature values and predictions.
 
     Parameters:
     - feature_values: A pandas DataFrame of feature values.
     - pred: A pandas Series of predictions, can be None.
+    - y_true: A pandas Series of true targets, can be None.
     - feature_name: The name of the feature for which the hover text is being prepared.
 
     Returns:
@@ -676,12 +726,19 @@ def _prepare_hover_text(feature_values, pred, feature_name):
     - The hover template to be used in Plotly.
     """
     # Building the base text for hover
-    hv_text = [
-        f"Id: {id_val}{f'<br />Predict: {pred_val}' if pred is not None else ''}"
-        for id_val, pred_val in zip(
-            feature_values.index, pred.values.flatten() if pred is not None else [""] * len(feature_values)
-        )
-    ]
+    y_true_values = y_true.values.flatten() if y_true is not None else None
+    if pred is not None and y_true_values is not None:
+        hv_text = [
+            f"Id: {idx}<br />True: {true_val}<br />Predict: {pred_val}"
+            for idx, true_val, pred_val in zip(feature_values.index, y_true_values, pred.values.flatten())
+        ]
+    else:
+        hv_text = [
+            f"Id: {id_val}{f'<br />Predict: {pred_val}' if pred is not None else ''}"
+            for id_val, pred_val in zip(
+                feature_values.index, pred.values.flatten() if pred is not None else [""] * len(feature_values)
+            )
+        ]
 
     # Creating a DataFrame for hover text
     hv_text_df = pd.DataFrame(hv_text, columns=["text"], index=feature_values.index)
@@ -709,6 +766,8 @@ def _add_violin_and_scatter(
     line_color,
     secondary_y=True,
     side="both",
+    y_true_series=None,
+    symbol_map=None,
 ):
     """Adds a Violin trace and a Scatter trace based on specified conditions."""
     y = contributions.loc[feature_cond].iloc[:, 0].values
@@ -726,15 +785,26 @@ def _add_violin_and_scatter(
             (feature_values.loc[feature_cond].values.flatten(), contributions.loc[feature_cond].index.values),
             axis=-1,
         )
-        marker = None
+        marker_symbols = None
+        if symbol_map is not None and y_true_series is not None:
+            y_true_selected = y_true_series.loc[feature_cond]
+            marker_symbols = y_true_selected.map(symbol_map).fillna("circle-open").tolist()
+
+        marker = {}
         if colorpoints is not None:
-            marker = {
-                "color": colorpoints_selected,
-                "colorscale": col_scale,
-                "opacity": 0.7,
-                "cmin": cmin,
-                "cmax": cmax,
-            }
+            marker.update(
+                {
+                    "color": colorpoints_selected,
+                    "colorscale": col_scale,
+                    "opacity": 0.7,
+                    "cmin": cmin,
+                    "cmax": cmax,
+                }
+            )
+        if marker_symbols is not None:
+            marker["symbol"] = marker_symbols
+        if not marker:
+            marker = None
 
         _add_scatter_trace(fig, x, y, c, marker, hovertext, hovertemplate, customdata, secondary_y)
 

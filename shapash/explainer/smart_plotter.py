@@ -578,6 +578,11 @@ class SmartPlotter:
         else:
             y_pred = None
 
+        # Check if y_target exist in compile()
+        y_true = self._explainer.y_target.loc[list_ind] if self._explainer.y_target is not None else None
+        if y_true is not None and self._explainer._case == "classification" and self._explainer.label_dict is not None:
+            y_true = y_true.replace(self._explainer.label_dict)
+
         max_len_by_row = max([round(50 / self._explainer.features_desc[feature_values.columns.values[0]]), 8])
 
         # selecting the best plot : Scatter, Violin?
@@ -589,6 +594,7 @@ class SmartPlotter:
                 self._explainer._case,
                 self._style_dict,
                 y_pred,
+                y_true,
                 proba_values,
                 col_value,
                 col_scale,
@@ -612,6 +618,7 @@ class SmartPlotter:
                 self._explainer._case,
                 self._style_dict,
                 y_pred,
+                y_true,
                 proba_values,
                 col_value,
                 col_scale,
