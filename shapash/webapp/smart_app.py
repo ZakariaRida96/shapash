@@ -1487,8 +1487,61 @@ class SmartApp:
                                     [
                                         html.Div(
                                             [
-                                                # --- GRAPH + bouton fullscreen Shapash ---
-                                                *self.draw_component("graph", "feature_selector"),
+                                                dbc.Row(
+                                                    [
+                                                        # --- GRAPH + bouton fullscreen Shapash ---
+                                                        dbc.Col(
+                                                            self.draw_component("graph", "feature_selector"),
+                                                            style={"minWidth": 0},
+                                                        ),
+                                                        # --- COLORSCALE (même design que les clusters) ---
+                                                        dbc.Col(
+                                                            [
+                                                                html.Div(
+                                                                    "Colorscale",
+                                                                    className="text-muted",
+                                                                    style={
+                                                                        "fontSize": "calc(0.3rem + 0.5vw)",
+                                                                        "marginBottom": "4px",
+                                                                    },
+                                                                ),
+                                                                dcc.Dropdown(
+                                                                    id="select_contrib_color",
+                                                                    options=cast(
+                                                                        Any,
+                                                                        [
+                                                                            {
+                                                                                "label": "_predict_",
+                                                                                "value": "predictions",
+                                                                            },
+                                                                            {"label": "_target_", "value": "targets"},
+                                                                            {"label": "_error_", "value": "errors"},
+                                                                        ],
+                                                                    ),
+                                                                    value="predictions",
+                                                                    clearable=False,
+                                                                    searchable=False,
+                                                                    style={
+                                                                        "width": "8em",
+                                                                        "fontSize": "calc(0.3rem + 0.5vw)",
+                                                                        "height": "1.4vw",
+                                                                        "lineHeight": "1.4vw",
+                                                                        "minHeight": "1.4vw",
+                                                                        "paddingTop": "0",
+                                                                        "paddingBottom": "0",
+                                                                    },
+                                                                ),
+                                                            ],
+                                                            style={
+                                                                "flex": "0 0 auto",
+                                                                "width": "auto",
+                                                                "padding": "10px 8px 0 8px",
+                                                                "borderLeft": "1px solid rgba(0,0,0,.12)",
+                                                            },
+                                                        ),
+                                                    ],
+                                                    className="g-0",
+                                                ),
                                                 # --- BOUTON EXPLICATION EN OVERLAY ---
                                                 html.Div(
                                                     [
@@ -2330,6 +2383,7 @@ class SmartApp:
                 Input("dataset", "data"),
                 Input("select_label", "value"),
                 Input("ember_feature_selector", "n_clicks"),
+                Input("select_contrib_color", "value"),
             ],
             [
                 State("points", "value"),
@@ -2337,7 +2391,7 @@ class SmartApp:
                 State("global_feature_importance", "figure"),
             ],
         )
-        def update_feature_selector(feature, data, label, click_zoom, points, violin, gfi_figure):
+        def update_feature_selector(feature, data, label, click_zoom, color_value, points, violin, gfi_figure):
             """
             Update feature plot according to label, data,
             selected feature on features importance graph,
@@ -2347,6 +2401,7 @@ class SmartApp:
             data: dataset
             label: selected label
             click_zoom: click on zoom button
+            color_value: values used to color points (predictions, targets or errors)
             points: points value in setting
             violin: violin value in setting
             gfi_figure: figure of Features Importance graph
@@ -2375,7 +2430,12 @@ class SmartApp:
                 violin_maxf=violin,
                 max_points=points,
                 zoom=zoom_active,
+                color_value=color_value,
             )
+
+            # Without y_target, targets and errors return a message figure that must be kept as is
+            if color_value != "predictions" and self.explainer.y_target is None:
+                return fs_figure
 
             fs_figure["layout"].clickmode = "event+select"
             # Adjust graph with adding x and y axis titles
@@ -2385,6 +2445,9 @@ class SmartApp:
                 x_ax=truncate_str(selected_feature, 110),
                 y_ax="Contribution",
             )
+            # Violin plot: the right y axis only draws the distribution, it must stay without title
+            if "yaxis2" in fs_figure.layout:
+                fs_figure.update_layout(yaxis_title=None)
             return fs_figure
 
         @app.callback(
