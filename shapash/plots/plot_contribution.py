@@ -17,23 +17,22 @@ NAN_PLACEHOLDER_K = 0.2
 # classification only: One marker symbol per class
 CLASS_MARKER_SYMBOLS = ["circle", "square", "triangle-up", "diamond", "cross", "star"]
 
-
 def get_class_marker_symbols(y_target: pd.Series, classes: list[Any] | None) -> pd.Series | None:
     """Map each point's true class (y_target) to a marker symbol.
 
     Parameters
     ----------
     y_target : pd.Series
-        True class of each point, indexed like the plotted data.
+        True class of each point.
     classes : list or None
-        Ordered list of the model classes. Each class gets the symbol at the same position.
+        Ordered list of the model classes.
 
     Returns
     -------
     pd.Series or None
         Marker symbol of each point, or None when markers should not be used
         (no classes, or more classes than available symbols).
-        Missing or unknown classes fall back to the default "circle" symbol.
+        Note that missing or unknown classes fall back to the default "circle" symbol.
     """
     if not classes or len(classes) > len(CLASS_MARKER_SYMBOLS):
         return None

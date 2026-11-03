@@ -859,6 +859,7 @@ class SmartPlotter:
         file_name: str | None = None,
         auto_open: bool = False,
         zoom: bool = False,
+        class_markers: bool = True,
     ) -> go.Figure:
         """
         Display a contribution plot using Plotly for a selected feature.
@@ -900,6 +901,9 @@ class SmartPlotter:
             Whether to automatically open the saved plot in a web browser.
         zoom : bool, default=False
             Indicates whether the plot should start in a zoomed-in state.
+        class_markers : bool, default=True
+            Whether to use one marker symbol per y_target class (classification only,
+            when y_target was given to compile() and the model has 6 classes or fewer).
 
         Returns
         -------
@@ -1049,7 +1053,7 @@ class SmartPlotter:
         # Raw class values are used (before label_dict) so that they match the model classes.
         marker_symbols = None
         y_target = self._explainer.y_target
-        if self._explainer._case == "classification" and y_target is not None:
+        if class_markers and self._explainer._case == "classification" and y_target is not None:
             marker_symbols = get_class_marker_symbols(y_target.loc[list_ind].iloc[:, 0], self._explainer._classes)
 
         max_len_by_row = max([round(50 / self._explainer.features_desc[feature_values.columns.values[0]]), 8])
