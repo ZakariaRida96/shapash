@@ -19,6 +19,7 @@ from shapash.manipulation.summarize import project_feature_values_1d
 from shapash.plots import plot_compacity
 from shapash.plots.plot_bar_chart import plot_bar_chart
 from shapash.plots.plot_contribution import (
+    get_class_marker_symbols,
     plot_interactions_scatter,
     plot_interactions_violin,
     plot_scatter,
@@ -1044,6 +1045,13 @@ class SmartPlotter:
         else:
             y_pred = None
 
+        # Classification only, when y_target was given to compile(): one marker symbol per true class.
+        # Raw class values are used (before label_dict) so that they match the model classes.
+        marker_symbols = None
+        y_target = self._explainer.y_target
+        if self._explainer._case == "classification" and y_target is not None:
+            marker_symbols = get_class_marker_symbols(y_target.loc[list_ind].iloc[:, 0], self._explainer._classes)
+
         max_len_by_row = max([round(50 / self._explainer.features_desc[feature_values.columns.values[0]]), 8])
 
         # selecting the best plot : Scatter, Violin?
@@ -1069,6 +1077,7 @@ class SmartPlotter:
                 file_name,
                 auto_open,
                 zoom,
+                marker_symbols=marker_symbols,
             )
         else:
             fig = plot_violin(
@@ -1091,6 +1100,7 @@ class SmartPlotter:
                 file_name,
                 auto_open,
                 zoom,
+                marker_symbols=marker_symbols,
             )
 
         return fig
