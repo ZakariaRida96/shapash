@@ -444,7 +444,7 @@ def plot_scatter(
     auto_open: bool = False,
     zoom: bool = False,
     marker_symbols: pd.Series | None = None,
-    color_values: pd.Dataframe | None = None,
+    color_values: pd.DataFrame | None = None,
     color_title: str | None = None,
 ) -> go.Figure:
     """
@@ -495,7 +495,7 @@ def plot_scatter(
     marker_symbols: pd.Series or None, optional
         Marker symbol of each point (one symbol per y_target class, classification only).
         If None, the default markers are used.
-    colors_values: pd.Dataframe or None, optional
+    color_values: pd.Dataframe or None, optional
         values used to colors points instead of prediction (ex: targets or errors).
     color_title: str or None, optional
         colorbar title used with color_values.
@@ -659,7 +659,7 @@ def plot_violin(
     auto_open: bool = False,
     zoom: bool = False,
     marker_symbols: pd.Series | None = None,
-    color_values: pd.Dataframe | None = None,
+    color_values: pd.DataFrame | None = None,
     color_title: str | None = None,
 ) -> go.Figure:
     """
@@ -708,7 +708,7 @@ def plot_violin(
     marker_symbols: pd.Series or None, optional
         Marker symbol of each point (one symbol per y_target class, classification only).
         If None, the default markers are used.
-    color_values: pd.Dataframe or None, optional
+    color_values: pd.DataFrame or None, optional
         values used to colors points instead of prediction (ex: targets or errors).
     color_title: str or None, optional
         colorbar title used with color_values.
@@ -974,7 +974,7 @@ def _update_contributions_fig(
         Type of the model, either 'classification' or 'regression'
     style_dict: dict[str, Any]
         the different styles used in the different outputs of Shapash
-    colors_values: pd.Dataframe or None, optional
+    color_values: pd.Dataframe or None, optional
         values used to colors points instead of prediction (ex: targets or errors).
     color_title: str or None, optional
         colorbar title used with color_values.
