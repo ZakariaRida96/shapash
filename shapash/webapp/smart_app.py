@@ -1571,19 +1571,19 @@ class SmartApp:
                                                                                 [
                                                                                     {
                                                                                         "label": "_predict_",
-                                                                                        "value": "prediction",
+                                                                                        "value": "predictions",
                                                                                     },
                                                                                     {
                                                                                         "label": "_target_",
-                                                                                        "value": "target",
+                                                                                        "value": "targets",
                                                                                     },
                                                                                     {
                                                                                         "label": "_error_",
-                                                                                        "value": "error",
+                                                                                        "value": "errors",
                                                                                     },
                                                                                 ],
                                                                             ),
-                                                                            value="prediction",
+                                                                            value="predictions",
                                                                             clearable=False,
                                                                             searchable=False,
                                                                             style={
@@ -2468,7 +2468,7 @@ class SmartApp:
             label: selected label
             click_zoom: click on zoom button
             markers_shape: state of the markers shape ON/OFF
-            color_value: values usede to color points (prediction,target,error)
+            color_value: values used to color points (predictions, targets, errors)
             points: points value in setting
             violin: violin value in setting
             gfi_figure: figure of Features Importance graph
@@ -2500,7 +2500,7 @@ class SmartApp:
                 class_markers=bool(markers_shape),
                 color_value=color_value,
             )
-            if color_value != "prediction" and self.explainer.y_target is None:
+            if color_value != "predictions" and self.explainer.y_target is None:
                 return fs_figure
             fs_figure["layout"].clickmode = "event+select"
             # Adjust graph with adding x and y axis titles

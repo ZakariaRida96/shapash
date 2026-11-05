@@ -860,7 +860,7 @@ class SmartPlotter:
         auto_open: bool = False,
         zoom: bool = False,
         class_markers: bool = True,
-        color_value: Literal["prediction", "target", "error"] = "prediction",
+        color_value: Literal["predictions", "targets", "errors"] = "predictions",
     ) -> go.Figure:
         """
         Display a contribution plot using Plotly for a selected feature.
@@ -905,8 +905,8 @@ class SmartPlotter:
         class_markers : bool, default=True
             Whether to use one marker symbol per y_target class (classification only,
             when y_target was given to compile() and the model has 6 classes or fewer).
-        color_value : "prediction", "target", "error", default = "prediction"
-            Values used to color points, "target", "error" require `y_target` in `compile()`
+        color_value : "predictions", "targets", "errors", default = "predictions"
+            Values used to color points, "targets", "errors" require `y_target` in `compile()`
             , otherwise a messege ks displayed instead of the plot.
         Returns
         -------
@@ -928,9 +928,9 @@ class SmartPlotter:
         if not isinstance(col, str | int):
             raise ValueError("parameter col must be string or int.")
 
-        if color_value not in ("prediction", "target", "error"):
-            raise ValueError("parameter color_value must be 'prediction', 'target' or 'error'.")
-        if color_value != "prediction" and self._explainer.y_target is None:
+        if color_value not in ("predictions", "targets", "errors"):
+            raise ValueError("parameter color_value must be 'predictions', 'targets' or 'errors'.")
+        if color_value != "predictions" and self._explainer.y_target is None:
             fig = go.Figure()
             fig.update_layout(
                 margin={"l": 20, "r": 20},
@@ -1014,12 +1014,12 @@ class SmartPlotter:
                     keep_quantile=(0.05, 0.95),
                 )
         # Targets or errors - color scale
-        if color_value == "target" and self._explainer.y_target is not None:
+        if color_value == "targets" and self._explainer.y_target is not None:
             color_values = self._explainer.y_target.loc[list_ind]
             if self._explainer._case == "classification":
                 color_values = (color_values == self._explainer._classes[label_num]).astype(int)
             color_title = "Target"
-        elif color_value == "error" and self._explainer.prediction_error is not None:
+        elif color_value == "errors" and self._explainer.prediction_error is not None:
             color_values = self._explainer.prediction_error.loc[list_ind]
             color_title = "Error"
         if color_values is not None:
