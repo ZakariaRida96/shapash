@@ -845,8 +845,9 @@ class SmartApp:
             "borderLeft": "1px solid rgba(0,0,0,.12)",
             "backgroundColor": "white",
         }
+        markers_block_style = {"marginBottom": "14px"}
         if not markers_available:
-            markers_shape_style["display"] = "none"
+            markers_block_style["display"] = "none"
         markers_button_style = {
             "font-size": "calc(0.3rem + 0.5vw)",
             "line-height": "1.0",
@@ -1390,69 +1391,8 @@ class SmartApp:
                                                 [
                                                     html.Div(
                                                         [
-                                                            dbc.Row(
-                                                                [
-                                                                    # --- GRAPH + bouton fullscreen Shapash ---
-                                                                    dbc.Col(
-                                                                        self.draw_component(
-                                                                            "graph", "feature_selector"
-                                                                        ),
-                                                                        style={"minWidth": 0},
-                                                                    ),
-                                                                    # --- COLORSCALE ---
-                                                                    dbc.Col(
-                                                                        [
-                                                                            html.Div(
-                                                                                "Colorscale",
-                                                                                className="text-muted",
-                                                                                style={
-                                                                                    "fontSize": "calc(0.3rem + 0.5vw)",
-                                                                                    "marginBottom": "4px",
-                                                                                },
-                                                                            ),
-                                                                            dcc.Dropdown(
-                                                                                id="select_contrib_color",
-                                                                                options=cast(
-                                                                                    Any,
-                                                                                    [
-                                                                                        {
-                                                                                            "label": "_predict_",
-                                                                                            "value": "predictions",
-                                                                                        },
-                                                                                        {
-                                                                                            "label": "_target_",
-                                                                                            "value": "targets",
-                                                                                        },
-                                                                                        {
-                                                                                            "label": "_error_",
-                                                                                            "value": "errors",
-                                                                                        },
-                                                                                    ],
-                                                                                ),
-                                                                                value="predictions",
-                                                                                clearable=False,
-                                                                                searchable=False,
-                                                                                style={
-                                                                                    "width": "8em",
-                                                                                    "fontSize": "calc(0.3rem + 0.5vw)",
-                                                                                    "height": "1.4vw",
-                                                                                    "lineHeight": "1.4vw",
-                                                                                    "minHeight": "1.4vw",
-                                                                                    "paddingTop": "0",
-                                                                                    "paddingBottom": "0",
-                                                                                },
-                                                                            ),
-                                                                        ],
-                                                                        style={
-                                                                            "flex": "0 0 auto",
-                                                                            "width": "auto",
-                                                                            "padding": "10px 8px 0 8px",
-                                                                            "borderLeft": "1px solid rgba(0,0,0,.12)",
-                                                                        },
-                                                                    ),
-                                                                ],
-                                                                className="g-0",
-                                                            ),
+                                                            # --- GRAPH + bouton fullscreen Shapash ---
+                                                            *self.draw_component("graph", "prediction_picking"),
                                                             # --- BOUTON EXPLICATION EN OVERLAY ---
                                                             html.Div(
                                                                 [
@@ -1574,43 +1514,91 @@ class SmartApp:
                                                         dbc.Col(
                                                             # --- GRAPH + bouton fullscreen Shapash ---
                                                             self.draw_component("graph", "feature_selector"),
-                                                            width=10 if markers_available else 12,
+                                                            width=10,
                                                         ),
                                                         # --- MARKERS SHAPE ON/OFF ---
                                                         dbc.Col(
-                                                            html.Div(
-                                                                [
-                                                                    html.Div(
-                                                                        "Markers shape",
-                                                                        className="text-muted",
-                                                                        style={
-                                                                            "fontSize": "calc(0.3rem + 0.5vw)",
-                                                                            "marginBottom": "4px",
-                                                                        },
-                                                                    ),
-                                                                    dbc.ButtonGroup(
-                                                                        [
-                                                                            dbc.Button(
-                                                                                "ON",
-                                                                                id="toggle_markers_on",
-                                                                                size="sm",
-                                                                                outline=True,
-                                                                                color="warning",
-                                                                                style=markers_button_style,
+                                                            [
+                                                                html.Div(
+                                                                    [
+                                                                        html.Div(
+                                                                            "Markers shape",
+                                                                            className="text-muted",
+                                                                            style={
+                                                                                "fontSize": "calc(0.3rem + 0.5vw)",
+                                                                                "marginBottom": "4px",
+                                                                            },
+                                                                        ),
+                                                                        dbc.ButtonGroup(
+                                                                            [
+                                                                                dbc.Button(
+                                                                                    "ON",
+                                                                                    id="toggle_markers_on",
+                                                                                    size="sm",
+                                                                                    outline=True,
+                                                                                    color="warning",
+                                                                                    style=markers_button_style,
+                                                                                ),
+                                                                                dbc.Button(
+                                                                                    "OFF",
+                                                                                    id="toggle_markers_off",
+                                                                                    size="sm",
+                                                                                    color="warning",
+                                                                                    style=markers_button_style,
+                                                                                ),
+                                                                            ],
+                                                                            size="sm",
+                                                                        ),
+                                                                        dcc.Store(id="markers_shape_store", data=False),
+                                                                    ],
+                                                                    style=markers_block_style,
+                                                                ),
+                                                                # --- COLORSCALE ---
+                                                                html.Div(
+                                                                    [
+                                                                        html.Div(
+                                                                            "Colorscale",
+                                                                            className="text-muted",
+                                                                            style={
+                                                                                "fontSize": "calc(0.3rem + 0.5vw)",
+                                                                                "marginBottom": "4px",
+                                                                            },
+                                                                        ),
+                                                                        dcc.Dropdown(
+                                                                            id="select_contrib_color",
+                                                                            options=cast(
+                                                                                Any,
+                                                                                [
+                                                                                    {
+                                                                                        "label": "_predict_",
+                                                                                        "value": "prediction",
+                                                                                    },
+                                                                                    {
+                                                                                        "label": "_target_",
+                                                                                        "value": "target",
+                                                                                    },
+                                                                                    {
+                                                                                        "label": "_error_",
+                                                                                        "value": "error",
+                                                                                    },
+                                                                                ],
                                                                             ),
-                                                                            dbc.Button(
-                                                                                "OFF",
-                                                                                id="toggle_markers_off",
-                                                                                size="sm",
-                                                                                color="warning",
-                                                                                style=markers_button_style,
-                                                                            ),
-                                                                        ],
-                                                                        size="sm",
-                                                                    ),
-                                                                    dcc.Store(id="markers_shape_store", data=False),
-                                                                ],
-                                                            ),
+                                                                            value="prediction",
+                                                                            clearable=False,
+                                                                            searchable=False,
+                                                                            style={
+                                                                                "width": "100%",
+                                                                                "fontSize": "calc(0.3rem + 0.5vw)",
+                                                                                "height": "1.4vw",
+                                                                                "lineHeight": "1.4vw",
+                                                                                "minHeight": "1.4vw",
+                                                                                "paddingTop": "0",
+                                                                                "paddingBottom": "0",
+                                                                            },
+                                                                        ),
+                                                                    ]
+                                                                ),
+                                                            ],
                                                             width=2,
                                                             style=markers_shape_style,
                                                         ),
